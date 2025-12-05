@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -166,7 +166,9 @@
                     if (saved) setSavedIds(JSON.parse(saved));
                 } catch(e) {}
 
-                return auth.onAuthStateChanged(setUser);
+                return auth.onAuthStateChanged((u) => {
+                    if (u) setUser(u); // Solo actualiza si hay usuario real
+                });
             }, []);
 
             const handleLogin = async () => {
@@ -174,8 +176,26 @@
                     const provider = new firebase.auth.GoogleAuthProvider();
                     await auth.signInWithPopup(provider);
                 } catch (error) {
-                    alert("Error login: " + error.message);
+                    console.log("Login Error (posiblemente dominio no autorizado):", error);
+                    // FALLBACK INTELIGENTE: Si falla por dominio, simulamos login para demo
+                    if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/operation-not-allowed' || error.message.includes('unauthorized')) {
+                        const demoUser = {
+                            displayName: "Atleta Invitado",
+                            photoURL: "https://ui-avatars.com/api/?name=Atleta+Invitado&background=random&color=fff&background=2563eb",
+                            uid: "demo-user-123",
+                            isAnonymous: true
+                        };
+                        setUser(demoUser);
+                        alert("⚠️ MODO DEMO ACTIVADO\n\nComo este dominio de prueba no está en la lista blanca de Firebase, hemos iniciado una sesión simulada para que puedas probar la app.");
+                    } else {
+                        alert("Error login: " + error.message);
+                    }
                 }
+            };
+
+            const handleLogout = () => {
+                auth.signOut().catch(e => console.log(e));
+                setUser(null);
             };
 
             const toggleSave = (id) => {
@@ -225,15 +245,19 @@
                                         <>
                                             <img src={user.photoURL} className="w-24 h-24 rounded-full border-4 border-neutral-800" />
                                             <h2 className="text-xl font-bold">Hola, {user.displayName ? user.displayName.split(' ')[0] : 'Atleta'}!</h2>
-                                            <button onClick={() => auth.signOut()} className="w-full py-3 bg-red-900/20 text-red-400 rounded-xl font-bold">Cerrar Sesión</button>
+                                            {user.isAnonymous && <p className="text-xs text-yellow-500 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-900/50">Modo Demo / Simulación</p>}
+                                            <button onClick={handleLogout} className="w-full py-3 bg-red-900/20 text-red-400 rounded-xl font-bold hover:bg-red-900/30 transition-colors">Cerrar Sesión</button>
                                         </>
                                     ) : (
                                         <>
                                             <Icons.User size={40} className="text-neutral-600" />
                                             <h2 className="text-xl font-bold text-center">Crea tu cuenta</h2>
-                                            <button onClick={handleLogin} className="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3">
+                                            <button onClick={handleLogin} className="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-200 transition-colors">
                                                 <Icons.Google size={20} /> Ingresar con Google
                                             </button>
+                                            <p className="text-xs text-neutral-500 text-center px-4">
+                                                Si falla por configuración de dominio, entrarás en modo demo automáticamente.
+                                            </p>
                                         </>
                                     )}
                                 </div>
