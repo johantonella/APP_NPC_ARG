@@ -79,10 +79,11 @@
             Home: (p) => <Icon path={<><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>} {...p} />,
             Google: (p) => <Icon path={<path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-6v-4h4v4h-4z"/>} {...p} />,
             Download: (p) => <Icon path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>} {...p} />,
-            Settings: (p) => <Icon path={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>} {...p} />,
             X: (p) => <Icon path={<><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></>} {...p} />,
-            Apple: (p) => <Icon path={<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>} {...p} />, // Placeholder for Apple
-            Android: (p) => <Icon path={<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>} {...p} /> // Placeholder for Android
+            Apple: (p) => <Icon path={<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>} {...p} />, 
+            Android: (p) => <Icon path={<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>} {...p} />,
+            MoreVertical: (p) => <Icon path={<><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></>} {...p} />,
+            Share: (p) => <Icon path={<><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></>} {...p} />
         };
 
         const App = () => {
@@ -91,30 +92,25 @@
             const [activeTab, setActiveTab] = useState('home');
             const [savedIds, setSavedIds] = useState([]);
             const [user, setUser] = useState(null);
-            const [showInstallModal, setShowInstallModal] = useState(false); // Empezamos oculto, se activa con useEffect
+            const [showInstallModal, setShowInstallModal] = useState(false);
             const [installPrompt, setInstallPrompt] = useState(null);
-            const [showAdmin, setShowAdmin] = useState(false);
             const [isIOS, setIsIOS] = useState(false);
 
             useEffect(() => {
-                // 1. Detectar iOS
                 const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 setIsIOS(isIosDevice);
 
-                // 2. Mostrar Modal de Instalación automáticamente al inicio (si no está instalada)
+                // Mostrar modal solo si no está instalada
                 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
                 if (!isStandalone) {
-                    // Esperar un poquito para que sea elegante
                     setTimeout(() => setShowInstallModal(true), 2000);
                 }
 
-                // 3. Capturar evento de instalación nativo (Android/PC)
                 window.addEventListener('beforeinstallprompt', (e) => {
                     e.preventDefault();
                     setInstallPrompt(e);
                 });
 
-                // 4. Cargar Datos
                 const loadData = async () => {
                     try {
                         const q = query(collection(db, "events"), orderBy("order", "asc"));
@@ -122,17 +118,18 @@
                         if (!snap.empty) {
                             setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                         } else {
-                            setEvents([]); 
+                            // Si falla la conexión o está vacía, mostramos los iniciales
+                            setEvents(INITIAL_DATA); 
                         }
                     } catch (e) {
-                        console.error("Offline");
+                        console.error("Offline o error de permisos, usando datos locales");
+                        setEvents(INITIAL_DATA);
                     } finally {
                         setLoading(false);
                     }
                 };
                 loadData();
 
-                // 5. Auth y Favoritos
                 const saved = localStorage.getItem('npc_arg_favorites');
                 if (saved) setSavedIds(JSON.parse(saved));
                 return onAuthStateChanged(auth, setUser);
@@ -146,19 +143,6 @@
                 }
             };
 
-            const handleAdminUpload = async () => {
-                if(!confirm("¿Cargar datos iniciales?")) return;
-                // Lógica simplificada de carga
-                try {
-                    for (const event of INITIAL_DATA) {
-                        const { id, ...data } = event; 
-                        await addDoc(collection(db, "events"), { ...data, order: event.id }); 
-                    }
-                    alert("Hecho. Recarga.");
-                    window.location.reload();
-                } catch(e) { alert(e.message); }
-            };
-
             const toggleSave = (id) => {
                 const newSaved = savedIds.includes(id) ? savedIds.filter(s => s !== id) : [...savedIds, id];
                 setSavedIds(newSaved);
@@ -170,9 +154,6 @@
                     installPrompt.prompt();
                     setInstallPrompt(null);
                     setShowInstallModal(false);
-                } else {
-                    // Si no hay prompt automático (ej: iPhone o ya denegado), mostramos instrucciones
-                    alert("Sigue las instrucciones en pantalla para tu dispositivo.");
                 }
             };
 
@@ -192,14 +173,8 @@
                                         <span className="text-xs text-blue-400 font-medium tracking-wide">Temporada 2026</span>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowAdmin(!showAdmin)} className="text-neutral-600 hover:text-white"><Icons.Settings size={18}/></button>
+                                {/* Icono de admin eliminado */}
                             </div>
-                            
-                            {showAdmin && (
-                                <button onClick={handleAdminUpload} className="w-full py-2 mb-2 bg-yellow-600/20 text-yellow-500 rounded-lg text-xs font-bold border border-yellow-600/50">
-                                    Admin: Cargar Base de Datos
-                                </button>
-                            )}
                         </div>
 
                         {/* CONTENIDO */}
@@ -256,57 +231,54 @@
                             )}
                         </div>
 
-                        {/* --- VENTANA EMERGENTE DE INSTALACIÓN (POPUP) --- */}
+                        {/* --- VENTANA EMERGENTE DE INSTALACIÓN --- */}
                         {showInstallModal && (
-                            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end fade-in">
+                            <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex items-end fade-in">
                                 <div className="bg-neutral-900 w-full rounded-t-3xl p-6 pb-10 border-t border-neutral-700 slide-up relative">
-                                    <button 
-                                        onClick={() => setShowInstallModal(false)} 
-                                        className="absolute top-4 right-4 text-gray-500 hover:text-white"
-                                    >
-                                        <Icons.X size={24} />
-                                    </button>
-
-                                    <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mb-6"></div>
+                                    <button onClick={() => setShowInstallModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white"><Icons.X size={24} /></button>
                                     
                                     <div className="flex gap-4 items-center mb-6">
-                                        <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-900/20">
-                                            NPC
-                                        </div>
+                                        <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">NPC</div>
                                         <div>
-                                            <h3 className="text-white font-bold text-lg">Instalar App NPC 2026</h3>
-                                            <p className="text-neutral-400 text-xs mt-1">Accede al calendario sin conexión.</p>
+                                            <h3 className="text-white font-bold text-lg">Instalar App 2026</h3>
+                                            <p className="text-neutral-400 text-xs">Acceso directo sin internet.</p>
                                         </div>
                                     </div>
 
-                                    {/* CONTENIDO DINÁMICO SEGÚN DISPOSITIVO */}
-                                    {isIOS ? (
-                                        <div className="space-y-3 bg-neutral-800/50 p-4 rounded-xl border border-neutral-700">
-                                            <p className="text-sm text-gray-300 font-bold mb-2">Para instalar en iPhone:</p>
-                                            <div className="flex items-center gap-3 text-xs text-gray-400">
-                                                <span className="bg-neutral-700 w-6 h-6 flex items-center justify-center rounded-full font-bold text-white">1</span>
-                                                <span>Toca el botón <strong className="text-white">Compartir</strong> (cuadrado con flecha) abajo.</span>
-                                            </div>
-                                            <div className="flex items-center gap-3 text-xs text-gray-400">
-                                                <span className="bg-neutral-700 w-6 h-6 flex items-center justify-center rounded-full font-bold text-white">2</span>
-                                                <span>Selecciona <strong className="text-white">Agregar al inicio</strong>.</span>
-                                            </div>
-                                        </div>
-                                    ) : (
+                                    {installPrompt ? (
                                         <button 
                                             onClick={triggerInstall}
-                                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all active:scale-[0.98]"
+                                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg mb-4"
                                         >
                                             Instalar Ahora
                                         </button>
+                                    ) : (
+                                        <div className="bg-neutral-800/50 p-4 rounded-xl border border-neutral-700 mb-4 text-sm text-gray-300">
+                                            {isIOS ? (
+                                                <div className="space-y-3">
+                                                    <p className="font-bold text-white mb-2">Pasos para iPhone:</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <Icons.Share className="text-blue-400"/> <span>1. Toca <b>Compartir</b> abajo.</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-xl leading-none">+</span> <span>2. Elige <b>Agregar al inicio</b>.</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <p className="font-bold text-white mb-2">Pasos para Android:</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <Icons.MoreVertical className="text-gray-400"/> <span>1. Toca los <b>3 puntos</b> arriba.</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <Icons.Download className="text-gray-400"/> <span>2. Elige <b>Instalar aplicación</b>.</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
 
-                                    <button 
-                                        onClick={() => setShowInstallModal(false)}
-                                        className="w-full text-neutral-500 font-medium py-3 text-sm hover:text-white mt-2"
-                                    >
-                                        Ahora no, usar en navegador
-                                    </button>
+                                    <button onClick={() => setShowInstallModal(false)} className="w-full text-neutral-500 font-medium py-2 text-sm">Ahora no</button>
                                 </div>
                             </div>
                         )}
