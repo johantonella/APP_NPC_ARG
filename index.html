@@ -46,14 +46,30 @@
 
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-type="module">
+        // 1. Importamos Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 2. Pegas aquí tu configuración (la que sacas del icono </>)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB30MYN6crHgI8LUf-WMSuuWgng_bqVi9A",
+            authDomain: "npc-argentina-2026.firebaseapp.com",
+            projectId: "npc-argentina-2026",
+            storageBucket: "npc-argentina-2026.firebasestorage.app",
+            messagingSenderId: "133481912186",
+            appId: "1:133481912186:web:6aedcd68fb0df7906128c3"
+              };
+
+        // 3. Iniciamos Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 4. Tu código de React (SOLO UNA VEZ)
         const { useState, useEffect } = React;
-
-        // --- URL DEL LOGO ---
-        // ¡IMPORTANTE! REEMPLAZA LA SIGUIENTE LÍNEA CON LA URL REAL DE TU LOGO
-        // Si no tienes URL, puedes subirlo a sitios como imgbb.com y pegar el enlace directo aquí.
-        const LOGO_URL = "https://github.com/user-attachments/assets/e2a6343a-023e-45d3-a8e3-f5ebcc192d25" ; 
-
+        
+        // 5. Tu Logo
+        const LOGO_URL = "https://github.com/user-attachments/assets/e2a6343a-023e-45d3-a8e3-f5ebcc192d25";
 
         // --- ICONOS SVG (Inline para evitar dependencias externas complejas) ---
         const Icon = ({ path, size = 20, className = "" }) => (
@@ -306,4 +322,5 @@
 </body>
 
 </html>
+
 
